@@ -1,0 +1,158 @@
+package main
+
+import (
+    "fmt"
+    "log"
+    "net/http"
+    "strings"
+    "time"
+
+    "github.com/PuerkitoBio/goquery"
+    /*
+        "fyne.io/fyne/app"
+        "fyne.io/fyne/widget"*/)
+
+func main() {
+    /*
+        app := app.New()
+
+        w := app.NewWindow("Hello")
+        w.SetContent(widget.NewVBox(
+            widget.NewLabel("Hello Fyne!"),
+            widget.NewButton("Quit", func() {
+                app.Quit()
+            }),
+        ))
+
+        w.ShowAndRun()
+    */
+    loc, err := time.LoadLocation("Asia/Seoul")
+    if err != nil {
+        panic(err)
+    }
+    now := time.Now()
+    t := now.In(loc)
+
+    nowUTCKorea := t.Format("2006-01-02 15:04:05")
+
+    countNotice := 0
+
+    NoticeURL := "https://careers.kakao.com/index"
+    resp, err := http.Get(NoticeURL)
+
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer resp.Body.Close()
+
+    html, err := goquery.NewDocumentFromReader(resp.Body)
+    wrapper := html.Find("ul.list_gnb")
+    items := wrapper.Find("div.list_sub")
+
+    //  타이틀 URL
+    items.Each(func(idx int, sel *goquery.Selection) {
+
+        menu := sel.Find("div.list_sub").Text()
+
+        if strings.Contains(menu, "a.on link_sub fst") {
+            fmt.Println("새로운 공지사항 메뉴가 올라왔슴!")
+            fmt.Println(menu)
+            fmt.Println()
+        }
+    })
+
+    for i := 0; i < 30; i++ {
+
+        url := fmt.Sprint("https://careers.kakao.com/jobs?company=ALL&keyword=&page=", i, "&skilset=")
+
+        resp, err := http.Get(url)
+
+        if err != nil {
+            log.Fatal(err)
+        }
+        defer resp.Body.Close()
+
+        html, err := goquery.NewDocumentFromReader(resp.Body)
+        wrapper := html.Find("ul.list_notice")
+        items := wrapper.Find("li")
+
+        //  타이틀 URL
+        items.Each(func(idx int, sel *goquery.Selection) {
+
+            tag := sel.Find("a.link_tag").Text()
+
+            tagtitle := sel.Find("span.txt_tit").Text()
+
+            title := sel.Find("a.link_notice").Text()
+
+            band, ok := sel.Attr("href")
+            if ok {
+                fmt.Printf(band)
+            }
+
+            // #이후의 문자열을 원하는 태그값으로 바꾸면 작동.
+            if strings.Contains(tag, "#Cloud") && strings.Contains(tag, "#Server") {
+                fmt.Println(tagtitle)
+                fmt.Println(url)
+                fmt.Println()
+                countNotice++
+            } else if strings.Contains(title, "Cloud") || strings.Contains(title, "클라우드") {
+                if strings.Contains(tag, "#Cloud") || strings.Contains(tag, "#Server") {
+                } else {
+                    fmt.Println(title)
+                    fmt.Println(url)
+                    fmt.Println()
+                    countNotice++
+                }
+            }
+        })
+    }
+    fmt.Println("〓〓〓〓〓〓〓〓〓〓〓〓〓〓〓〓〓〓〓〓〓〓〓〓〓〓〓〓〓〓〓〓〓〓〓〓〓〓〓〓〓〓〓〓〓〓〓〓〓〓〓〓〓〓〓〓")
+    fmt.Println(nowUTCKorea, " 기준")
+    fmt.Println("현재 모집중인 공고는 ", countNotice, "건 입니다.")
+
+    fmt.Println("Press the Enter Key to terminate the console screen!")
+    fmt.Scanln() // wait for Enter Key
+    /*
+        fmt.Println("〓〓〓〓〓〓〓〓〓〓〓〓〓〓〓〓〓〓〓〓〓〓〓〓〓〓〓〓〓〓〓〓〓〓〓〓〓〓〓〓〓〓〓〓〓〓〓〓〓〓〓〓〓〓〓〓")
+        fmt.Println()
+    */
+
+    /*
+
+        // To. 송
+        for i := 0; i < 30; i++ {
+
+            Songurl := fmt.Sprint("https://careers.kakao.com/jobs?company=ALL&keyword=&page=", i, "&part=BUSINESS_SERVICES&skilset=")
+
+            resp, err := http.Get(Songurl)
+
+            if err != nil {
+                log.Fatal(err)
+            }
+            defer resp.Body.Close()
+
+            html, err := goquery.NewDocumentFromReader(resp.Body)
+            wrapper := html.Find("ul.list_notice")
+            items := wrapper.Find("li")
+
+            items.Each(func(idx int, sel *goquery.Selection) {
+                Songvalue := sel.Find("a.link_notice").Text()
+
+                if strings.Contains(Songvalue, "마케팅") || strings.Contains(Songvalue, "기획") {
+                    if strings.Contains(Songvalue, "경력") {
+                        fmt.Println("※경력직※")
+                        fmt.Println(Songvalue)
+                        fmt.Println(Songurl)
+                        fmt.Println()
+                    } else {
+                        fmt.Println(Songvalue)
+                        fmt.Println(Songurl)
+                        fmt.Println()
+                    }
+                }
+            })
+        }
+
+    */
+}
